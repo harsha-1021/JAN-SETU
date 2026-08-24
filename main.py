@@ -212,6 +212,35 @@ def hash_password(password: str, salt: Optional[bytes] = None) -> tuple:
     return digest.hex(), salt.hex()
 
 
+def configure_policymaker_from_environment() -> None:
+    """Create or refresh the demo policymaker from private host secrets."""
+    username = os.getenv("POLICYMAKER_USERNAME", "").strip()
+    password = os.getenv("POLICYMAKER_PASSWORD", "")
+    if not username or not password:
+        return
+    if len(password) < 12:
+        raise RuntimeError("POLICYMAKER_PASSWORD must contain at least 12 characters")
+
+    password_hash, password_salt = hash_password(password)
+    created_at = datetime.now(timezone.utc).isoformat()
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        """
+        INSERT INTO users (username, password_hash, password_salt, created_at)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(username) DO UPDATE SET
+            password_hash = excluded.password_hash,
+            password_salt = excluded.password_salt
+        """,
+        (username, password_hash, password_salt, created_at),
+    )
+    conn.commit()
+    conn.close()
+
+
+configure_policymaker_from_environment()
+
+
 def verify_password(password: str, stored_hash: str, stored_salt_hex: str) -> bool:
     salt = bytes.fromhex(stored_salt_hex)
     candidate_hash, _ = hash_password(password, salt)
