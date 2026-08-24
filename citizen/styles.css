@@ -39,7 +39,7 @@ a { color: inherit; }
 .kicker { color: var(--teal-dark); text-transform: uppercase; letter-spacing: .12em; font-size: 12px; font-weight: 800; }
 h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(38px, 6vw, 66px); line-height: 1.02; letter-spacing: -.035em; margin: 12px 0 18px; }
 .hero p { max-width: 650px; color: var(--muted); font-size: 18px; line-height: 1.65; margin: 0; }
-.layout { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 28px; padding: 12px 0 64px; align-items: start; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); padding: 12px 0 64px; align-items: start; }
 .card { background: rgba(255,253,248,.94); border: 1px solid rgba(20,43,59,.12); border-radius: 20px; box-shadow: var(--shadow); padding: 28px; }
 .side-card { background: var(--navy); color: white; }
 .side-card h2 { font-family: Georgia, serif; font-size: 25px; margin: 0 0 12px; }
@@ -106,7 +106,6 @@ textarea { min-height: 150px; resize: vertical; line-height: 1.5; }
 .privacy-note { margin-top: 22px; color: var(--muted); font-size: 12px; line-height: 1.5; }
 @media (max-width: 780px) {
   .layout { grid-template-columns: 1fr; }
-  .side-card { order: -1; }
   .hero { padding-top: 38px; }
   .topbar { align-items: flex-start; }
 }
