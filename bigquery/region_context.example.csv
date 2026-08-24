@@ -1,0 +1,6 @@
+region,population,infrastructure_index,investment_penalty,current_investment_plan,data_source
+Chennai,7000000,0.71,0.10,Illustrative water-network renewal programme,DEMO PLACEHOLDER - replace with official data
+Bangalore,8500000,0.76,0.60,Illustrative urban mobility investment,DEMO PLACEHOLDER - replace with official data
+Mumbai,12400000,0.79,0.45,Illustrative drainage resilience programme,DEMO PLACEHOLDER - replace with official data
+Delhi,16700000,0.74,0.40,Illustrative public health infrastructure plan,DEMO PLACEHOLDER - replace with official data
+

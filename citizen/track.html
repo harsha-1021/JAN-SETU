@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Track the status of a Citizen Voice infrastructure complaint.">
+  <title>Citizen Voice — Track complaint</title>
+  <link rel="stylesheet" href="/citizen/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/citizen/"><span class="brand-mark">CV</span><span>Citizen Voice</span></a>
+      <nav class="nav" aria-label="Citizen services">
+        <a href="/citizen/">File complaint</a>
+        <a class="active" href="/citizen/track.html">Track status</a>
+      </nav>
+    </header>
+  </div>
+
+  <main class="track-wrap">
+    <section class="hero">
+      <div class="kicker">Complaint tracker</div>
+      <h1>See what happened to your report.</h1>
+      <p>Enter the private tracking code you received after submitting your complaint.</p>
+    </section>
+
+    <section class="card">
+      <form class="track-form" id="track-form">
+        <input id="tracking-input" aria-label="Tracking code" placeholder="CP-XXXXXXXXXX" maxlength="13" required>
+        <button class="button" type="submit">Check status</button>
+      </form>
+      <div class="notice" id="track-notice" role="alert"></div>
+      <div id="track-result" hidden>
+        <div class="timeline" aria-label="Complaint progress">
+          <div class="step" data-status="submitted">Submitted</div>
+          <div class="step" data-status="in_review">In review</div>
+          <div class="step" data-status="resolved">Resolved</div>
+        </div>
+        <div class="detail-grid">
+          <div class="detail"><span>Tracking code</span><strong id="result-code"></strong></div>
+          <div class="detail"><span>Current status</span><strong id="result-status"></strong></div>
+          <div class="detail"><span>Issue category</span><strong id="result-category"></strong></div>
+          <div class="detail"><span>Region</span><strong id="result-region"></strong></div>
+          <div class="detail"><span>Submitted</span><strong id="result-date"></strong></div>
+        </div>
+        <p class="privacy-note">For privacy, this page shows progress information only. Your original message and identity are not displayed.</p>
+      </div>
+    </section>
+  </main>
+  <script src="/citizen/track.js"></script>
+</body>
+</html>

@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infrastructure Priority Register</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1B2A3A;
+    --paper: #EAE7DD;
+    --paper-raised: #F2F0E7;
+    --brass: #A8763E;
+    --teal: #3E6B63;
+    --brick: #A13D2B;
+    --slate: #5B6B6F;
+    --line: rgba(27, 42, 58, 0.14);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header {
+    padding: 28px 32px 22px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  header h1 {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600;
+    font-size: 22px;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--slate);
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 1px;
+    background: var(--line);
+    min-height: calc(100vh - 76px);
+  }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+  }
+
+  #map-panel, #list-panel {
+    background: var(--paper);
+  }
+
+  #map {
+    height: 60vh;
+    min-height: 420px;
+    filter: sepia(8%) saturate(85%) hue-rotate(-6deg);
+  }
+
+  #list-panel {
+    padding: 20px 0;
+    max-height: calc(100vh - 76px);
+    overflow-y: auto;
+  }
+
+  .list-header {
+    padding: 0 24px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--slate);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .forecast-strip {
+    padding: 10px 24px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(62,107,99,0.06);
+    color: var(--slate);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    line-height: 1.45;
+  }
+
+  .forecast-strip strong { color: var(--teal); }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .row:hover, .row.active {
+    background: var(--paper-raised);
+  }
+
+  .row .rank {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--slate);
+    width: 22px;
+    flex-shrink: 0;
+  }
+
+  .row .info { flex: 1; min-width: 0; }
+
+  .row .region {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .row .meta {
+    font-size: 12px;
+    color: var(--slate);
+    margin-top: 2px;
+    text-transform: capitalize;
+  }
+
+  .stamp {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--brass);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--brass);
+    background: repeating-conic-gradient(from 0deg, transparent 0deg 9deg, rgba(168,118,62,0.08) 9deg 18deg);
+  }
+
+  .stamp.top { border-color: var(--brick); color: var(--brick); }
+
+  .leaflet-marker-stamp {
+    border-radius: 50%;
+    border: 2.5px solid var(--brass);
+    background: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    color: var(--brass);
+    box-shadow: 0 1px 4px rgba(27,42,58,0.35);
+  }
+
+  .leaflet-marker-stamp.top { border-color: var(--brick); color: var(--brick); }
+
+  #breakdown {
+    padding: 20px 24px;
+    border-top: 1px solid var(--line);
+    background: var(--paper-raised);
+  }
+
+  #breakdown.empty {
+    color: var(--slate);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  #breakdown h2 {
+    font-family: 'Source Serif 4', serif;
+    font-size: 16px;
+    margin: 0 0 4px;
+  }
+
+  #breakdown .subhead {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--slate);
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .score-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 12px 0 18px;
+    padding: 11px 13px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--slate);
+  }
+
+  .score-summary strong {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--ink);
+    font-size: 17px;
+  }
+
+  .complaint-heading {
+    margin: 0 0 3px;
+    font-family: 'Source Serif 4', serif;
+    font-size: 15px;
+  }
+
+  .complaint-intro {
+    margin: 0 0 10px;
+    color: var(--slate);
+    font-size: 12px;
+  }
+
+  .complaint-samples {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .complaint-sample {
+    position: relative;
+    padding: 10px 12px 10px 38px;
+    background: var(--paper);
+    border-left: 3px solid var(--teal);
+    border-radius: 3px;
+  }
+
+  .sample-number {
+    position: absolute;
+    top: 11px;
+    left: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--teal);
+  }
+
+  .complaint-sample blockquote {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .image-evidence {
+    display: block;
+    margin-top: 7px;
+    padding-top: 7px;
+    border-top: 1px dashed var(--line);
+    color: var(--teal);
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .sample-meta {
+    display: block;
+    margin-top: 5px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--slate);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .complaint-sample.unavailable {
+    padding-left: 12px;
+    color: var(--slate);
+    font-size: 12px;
+    font-style: italic;
+    border-left-color: var(--line);
+  }
+
+  .context-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 14px 0 0;
+  }
+
+  .context-card {
+    padding: 10px 12px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .context-card span {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--slate);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .context-card strong { font-size: 12px; font-weight: 500; }
+
+  .brief-btn {
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--teal);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--teal);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .brief-btn:hover { background: rgba(62,107,99,0.08); }
+  .brief-btn:disabled { opacity: 0.55; cursor: wait; }
+
+  .ai-brief {
+    margin-top: 10px;
+    padding: 13px;
+    border: 1px solid var(--teal);
+    border-radius: 4px;
+    background: rgba(62,107,99,0.06);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .ai-brief h4 { margin: 0 0 6px; font-family: 'Source Serif 4', serif; font-size: 15px; }
+  .ai-brief p { margin: 5px 0; }
+  .ai-brief strong { color: var(--ink); }
+
+  .forward-btn {
+    width: 100%;
+    margin-top: 18px;
+    padding: 11px 16px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 4px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .forward-btn:hover { background: var(--teal); }
+  .forward-btn:disabled { opacity: 0.6; cursor: default; }
+
+  .forward-status {
+    margin-top: 18px;
+    padding: 11px 16px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--slate);
+  }
+  .forward-status .dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--teal);
+    margin-right: 8px;
+  }
+  .forward-status strong { color: var(--ink); }
+
+  .empty-state {
+    padding: 60px 24px;
+    text-align: center;
+    color: var(--slate);
+  }
+  .empty-state h2 {
+    font-family: 'Source Serif 4', serif;
+    color: var(--ink);
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="eyebrow">Digital Public Infrastructure &mdash; Priority Register</div>
+    <h1>Citizen Demand &amp; Investment Priorities</h1>
+  </div>
+  <div style="text-align:right;">
+    <div class="eyebrow" id="last-updated">&mdash;</div>
+    <a href="/dashboard/escalations.html" style="color: var(--teal); text-decoration: none; font-family: 'IBM Plex Mono', monospace; font-size: 12px;">Escalation log &rarr;</a>
+    &nbsp;&middot;&nbsp;
+    <a href="#" id="logout-link" style="color: var(--slate); text-decoration: none; font-family: 'IBM Plex Mono', monospace; font-size: 12px;">Log out</a>
+  </div>
+</header>
+
+<main>
+  <div id="map-panel">
+    <div id="map"></div>
+  </div>
+
+  <div id="list-panel">
+    <div class="list-header">Ranked by priority score</div>
+    <div class="forecast-strip" id="forecast-status">BigQuery ML forecast loading…</div>
+    <div id="list-body"></div>
+    <div id="breakdown" class="empty">Select a region to read citizen complaints behind its priority score.</div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script type="module">
+  import {
+    apiFetch,
+    cloudState,
+    listenForDashboardUpdates,
+    loadGoogleMaps,
+    requirePolicymaker,
+    signOutPolicymaker,
+  } from '/dashboard/cloud-client.js';
+
+  let map = null;
+  let mapProvider = 'leaflet';
+  let markers = [];
+  let activeRowEl = null;
+  let selectedKey = null; // "region|category" of whatever's open in the details panel
+  let googleCapabilities = {};
+  let latestMapData = [];
+
+  function initializeLeafletMap() {
+    if (mapProvider === 'leaflet' && map) return;
+
+    markers.forEach(marker => {
+      if (mapProvider === 'google') marker.setMap(null);
+      else if (map) map.removeLayer(marker);
+    });
+    markers = [];
+
+    const mapElement = document.getElementById('map');
+    mapElement.replaceChildren();
+    mapProvider = 'leaflet';
+    map = L.map(mapElement, { scrollWheelZoom: true }).setView([20.5937, 78.9629], 5);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+      maxZoom: 18,
+    }).addTo(map);
+
+    if (latestMapData.length) renderMap(latestMapData);
+  }
+
+  window.addEventListener('google-maps-auth-failure', initializeLeafletMap);
+
+  async function initializeMap() {
+    try {
+      const maps = await loadGoogleMaps();
+      if (maps) {
+        mapProvider = 'google';
+        map = new maps.Map(document.getElementById('map'), {
+          center: { lat: 20.5937, lng: 78.9629 },
+          zoom: 5,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+        });
+        return;
+      }
+    } catch (_) {
+      // The open map remains a deliberate local-development fallback.
+    }
+    initializeLeafletMap();
+  }
+
+  function focusMap(item) {
+    if (!map) return;
+    if (mapProvider === 'google') {
+      map.panTo({ lat: item.latitude, lng: item.longitude });
+      map.setZoom(12);
+    } else {
+      map.setView([item.latitude, item.longitude], 12);
+    }
+  }
+
+  function escapeHtml(value) {
+    const node = document.createElement('span');
+    node.textContent = String(value ?? '');
+    return node.innerHTML;
+  }
+
+  function stampIcon(score, maxScore, isTop) {
+    const size = Math.max(30, Math.min(56, 30 + (score / (maxScore || 1)) * 26));
+    return L.divIcon({
+      className: '',
+      html: `<div class="leaflet-marker-stamp${isTop ? ' top' : ''}" style="width:${size}px;height:${size}px;font-size:${size * 0.3}px;">${score.toFixed(1)}</div>`,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+    });
+  }
+
+  function renderBreakdown(item) {
+    const el = document.getElementById('breakdown');
+    el.classList.remove('empty');
+
+    const complaints = (item.representative_reasons || []).slice(0, 3);
+    const complaintSamples = complaints.length
+      ? complaints.map((complaint, index) => {
+          const reporterCount = Number(complaint.reporter_count) || 1;
+          return `
+            <li class="complaint-sample">
+              <span class="sample-number">${String(index + 1).padStart(2, '0')}</span>
+              <blockquote>${escapeHtml(complaint.text)}</blockquote>
+              ${complaint.image_evidence
+                ? `<span class="image-evidence">Gemini visual evidence: ${escapeHtml(complaint.image_evidence)}</span>`
+                : ''}
+              <span class="sample-meta">Raised by ${reporterCount} citizen${reporterCount === 1 ? '' : 's'}</span>
+            </li>
+          `;
+        }).join('')
+      : '<li class="complaint-sample unavailable">No complaint text is available for this group yet.</li>';
+
+    const forwardSection = item.escalated
+      ? `<div class="forward-status">
+           <span class="dot"></span>
+           Forwarded to <strong>${escapeHtml(item.escalated_to)}</strong>
+           on ${new Date(item.escalated_at).toLocaleDateString()}
+         </div>`
+      : `<button class="forward-btn" id="forward-btn">Forward to ${escapeHtml(escalationTarget(item.category))}</button>`;
+
+    const contextSection = item.infrastructure_index != null || item.current_investment_plan
+      ? `<div class="context-grid">
+           ${item.infrastructure_index != null
+             ? `<div class="context-card"><span>Infrastructure index</span><strong>${Number(item.infrastructure_index).toFixed(2)}</strong></div>`
+             : ''}
+           ${item.current_investment_plan
+             ? `<div class="context-card"><span>Current investment plan</span><strong>${escapeHtml(item.current_investment_plan)}</strong></div>`
+             : ''}
+         </div>`
+      : '';
+
+    const briefSection = googleCapabilities.gemini
+      ? `<button class="brief-btn" id="brief-btn">Generate Gemini policy brief</button>
+         <div id="ai-brief" hidden></div>`
+      : '';
+
+    el.innerHTML = `
+      <h2>${escapeHtml(item.region)} &mdash; ${escapeHtml(item.category)}</h2>
+      <div class="subhead">${item.complaint_count} complaint${item.complaint_count === 1 ? '' : 's'} on file &middot; ${item.unique_reporter_count} unique reporter${item.unique_reporter_count === 1 ? '' : 's'}</div>
+      <div class="score-summary"><span>Priority score</span><strong>${Number(item.priority_score).toFixed(1)}</strong></div>
+      <h3 class="complaint-heading">Citizen complaints</h3>
+      <p class="complaint-intro">A sample of what citizens in this hotspot are reporting</p>
+      <ol class="complaint-samples">${complaintSamples}</ol>
+      ${contextSection}
+      ${briefSection}
+      ${forwardSection}
+    `;
+
+    if (!item.escalated) {
+      document.getElementById('forward-btn').addEventListener('click', () => forwardComplaint(item));
+    }
+    const briefButton = document.getElementById('brief-btn');
+    if (briefButton) briefButton.addEventListener('click', () => generatePolicyBrief(item));
+  }
+
+  async function generatePolicyBrief(item) {
+    const button = document.getElementById('brief-btn');
+    const panel = document.getElementById('ai-brief');
+    button.disabled = true;
+    button.textContent = 'Gemini is preparing the brief…';
+    try {
+      const response = await apiFetch('/regions/policy-brief', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ region: item.region, category: item.category }),
+      });
+      if (!response.ok) throw new Error('brief-unavailable');
+      const brief = await response.json();
+      panel.className = 'ai-brief';
+      panel.hidden = false;
+      panel.innerHTML = `
+        <h4>${escapeHtml(brief.title)}</h4>
+        <p><strong>Recommended project:</strong> ${escapeHtml(brief.recommended_project)}</p>
+        <p>${escapeHtml(brief.rationale)}</p>
+        <p><strong>Expected impact:</strong> ${escapeHtml(brief.expected_impact)}</p>
+        <p><strong>First action:</strong> ${escapeHtml(brief.first_action)}</p>
+      `;
+      button.textContent = 'Regenerate Gemini policy brief';
+    } catch (_) {
+      panel.className = 'ai-brief';
+      panel.hidden = false;
+      panel.textContent = 'The Gemini policy brief is temporarily unavailable.';
+      button.textContent = 'Try Gemini policy brief again';
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  // Mirrors scoring.ESCALATION_TARGETS on the backend, purely for the
+  // button label before the request completes — the backend is the
+  // source of truth for actual routing.
+  const ESCALATION_TARGETS_PREVIEW = {
+    health: 'State Health Department',
+    water: 'State Water Resources Department',
+    sanitation: 'Urban Sanitation Directorate',
+    roads: 'Public Works Department (PWD)',
+    power: 'State Electricity Board',
+    education: 'State Education Department',
+    other: "District Collector's Office",
+  };
+  function escalationTarget(category) {
+    return ESCALATION_TARGETS_PREVIEW[category] || ESCALATION_TARGETS_PREVIEW.other;
+  }
+
+  async function forwardComplaint(item) {
+    const btn = document.getElementById('forward-btn');
+    btn.disabled = true;
+    btn.textContent = 'Forwarding\u2026';
+
+    try {
+      const res = await apiFetch('/regions/escalate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ region: item.region, category: item.category }),
+      });
+      if (res.status === 401) {
+        window.location.href = '/dashboard/login.html';
+        return;
+      }
+      if (!res.ok) throw new Error('Request failed');
+
+      selectedKey = item.region + '|' + item.category;
+      await loadDashboard(); // refresh so the panel shows the new escalated state
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Forward to ' + escalationTarget(item.category) + ' \u2014 retry';
+    }
+  }
+
+  function renderList(data) {
+    const listBody = document.getElementById('list-body');
+    listBody.innerHTML = '';
+    const maxScore = data.length ? data[0].priority_score : 1;
+
+    data.forEach((item, i) => {
+      const key = item.region + '|' + item.category;
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.dataset.key = key;
+      row.innerHTML = `
+        <div class="rank">${String(i + 1).padStart(2, '0')}</div>
+        <div class="info">
+          <div class="region">${escapeHtml(item.region)}</div>
+          <div class="meta">${escapeHtml(item.category)} &middot; ${item.complaint_count} filed</div>
+        </div>
+        <div class="stamp${i === 0 ? ' top' : ''}">${item.priority_score.toFixed(1)}</div>
+      `;
+      row.addEventListener('click', () => {
+        if (activeRowEl) activeRowEl.classList.remove('active');
+        row.classList.add('active');
+        activeRowEl = row;
+        selectedKey = key;
+        renderBreakdown(item);
+        focusMap(item);
+      });
+      if (key === selectedKey) {
+        row.classList.add('active');
+        activeRowEl = row;
+      }
+      listBody.appendChild(row);
+    });
+  }
+
+  function renderMap(data) {
+    latestMapData = data;
+    markers.forEach(marker => {
+      if (mapProvider === 'google') marker.setMap(null);
+      else map.removeLayer(marker);
+    });
+    markers = [];
+    const maxScore = data.length ? Math.max(...data.map(d => d.priority_score)) : 1;
+
+    data.forEach((item, i) => {
+      let marker;
+      const selectMarker = () => {
+          selectedKey = item.region + '|' + item.category;
+          renderBreakdown(item);
+      };
+      if (mapProvider === 'google') {
+        const scale = Math.max(12, Math.min(22, 12 + (item.priority_score / (maxScore || 1)) * 10));
+        marker = new google.maps.Marker({
+          position: { lat: item.latitude, lng: item.longitude },
+          map,
+          title: `${item.region} — ${item.category}: ${item.priority_score.toFixed(1)}`,
+          label: {
+            text: item.priority_score.toFixed(0),
+            color: '#1B2A3A',
+            fontFamily: 'IBM Plex Mono',
+            fontWeight: '600',
+          },
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor: '#F2F0E7',
+            fillOpacity: 1,
+            strokeColor: i === 0 ? '#A13D2B' : '#A8763E',
+            strokeWeight: 3,
+            scale,
+          },
+        });
+        marker.addListener('click', selectMarker);
+      } else {
+        marker = L.marker([item.latitude, item.longitude], {
+          icon: stampIcon(item.priority_score, maxScore, i === 0),
+        }).addTo(map);
+        marker.on('click', selectMarker);
+      }
+      markers.push(marker);
+    });
+  }
+
+  async function loadDashboard() {
+    try {
+      const res = await apiFetch('/regions/priority');
+      if (res.status === 401) {
+        window.location.href = '/dashboard/login.html';
+        return;
+      }
+      const data = await res.json();
+
+      document.getElementById('last-updated').textContent =
+        'Live \u2014 updated ' + new Date().toLocaleTimeString();
+
+      if (!data.length) {
+        document.getElementById('list-body').innerHTML = `
+          <div class="empty-state">
+            <h2>No complaints on file yet</h2>
+            <p>Once citizens start filing through the intake bot, ranked priorities will appear here.</p>
+          </div>`;
+        return;
+      }
+
+      renderList(data);
+      renderMap(data);
+
+      // Keep whatever the viewer had open updated with fresh complaint data,
+      // instead of resetting the details panel on every refresh.
+      if (selectedKey) {
+        const stillPresent = data.find(d => (d.region + '|' + d.category) === selectedKey);
+        if (stillPresent) {
+          renderBreakdown(stillPresent);
+        } else {
+          selectedKey = null;
+          document.getElementById('breakdown').className = 'empty';
+          document.getElementById('breakdown').innerHTML = 'Select a region to read citizen complaints behind its priority score.';
+        }
+      }
+    } catch (err) {
+      document.getElementById('list-body').innerHTML = `
+        <div class="empty-state">
+          <h2>Could not reach the backend</h2>
+          <p>Make sure the FastAPI server is running at this same address.</p>
+        </div>`;
+    }
+  }
+
+  async function loadForecast() {
+    const el = document.getElementById('forecast-status');
+    try {
+      const response = await apiFetch('/analytics/forecast?horizon_days=30');
+      if (!response.ok) throw new Error('forecast');
+      const result = await response.json();
+      if (result.status !== 'ready' || !result.forecasts.length) {
+        el.innerHTML = '<strong>BigQuery ML</strong> · collecting enough history for a 30-day hotspot forecast';
+        return;
+      }
+      const top = result.forecasts[0];
+      el.innerHTML = `<strong>BigQuery ML forecast</strong> · ${escapeHtml(top.region)} / ${escapeHtml(top.category)} is the leading predicted hotspot`;
+    } catch (_) {
+      el.innerHTML = '<strong>BigQuery ML</strong> · forecast service unavailable';
+    }
+  }
+
+  document.getElementById('logout-link').addEventListener('click', async (e) => {
+    e.preventDefault();
+    await signOutPolicymaker();
+    window.location.href = '/dashboard/login.html';
+  });
+
+  async function bootstrap() {
+    if (!await requirePolicymaker()) {
+      window.location.href = '/dashboard/login.html';
+      return;
+    }
+    const state = await cloudState();
+    googleCapabilities = state.publicConfig.google_services || {};
+    await initializeMap();
+    await Promise.all([loadDashboard(), loadForecast()]);
+    const unsubscribe = await listenForDashboardUpdates(loadDashboard);
+    if (!unsubscribe) setInterval(loadDashboard, 10000);
+  }
+
+  bootstrap();
+</script>
+
+</body>
+</html>

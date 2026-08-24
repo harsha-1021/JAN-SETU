@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Submit a multilingual public infrastructure complaint by text or voice.">
+  <title>Citizen Voice — File a complaint</title>
+  <link rel="stylesheet" href="/citizen/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/citizen/"><span class="brand-mark">CV</span><span>Citizen Voice</span></a>
+      <nav class="nav" aria-label="Citizen services">
+        <a class="active" href="/citizen/">File complaint</a>
+        <a href="/citizen/track.html">Track status</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="kicker">Your community. Your voice.</div>
+      <h1>Tell us what your area needs.</h1>
+      <p>Report problems with water, roads, health, sanitation, electricity or education in your own language. Your report joins similar community requests and helps public officials act on the strongest needs.</p>
+    </section>
+
+    <main class="layout">
+      <form class="card" id="complaint-form">
+        <h2 class="section-title">File a complaint</h2>
+        <p class="section-copy">Choose text or voice. Language is detected automatically.</p>
+
+        <div class="mode-switch" role="group" aria-label="Complaint input type">
+          <button type="button" class="active" id="text-mode">Write complaint</button>
+          <button type="button" id="voice-mode">Record voice</button>
+        </div>
+
+        <div class="field" id="text-field">
+          <label for="complaint-text">What problem are you facing?</label>
+          <textarea id="complaint-text" maxlength="2000" placeholder="Example: There has been no drinking water near our school for three days."></textarea>
+        </div>
+
+        <div class="voice-box" id="voice-box">
+          <label for="voice-language">Language spoken</label>
+          <select id="voice-language">
+            <option value="hi-IN">Hindi</option>
+            <option value="en-IN">English (India)</option>
+            <option value="ta-IN">Tamil</option>
+            <option value="te-IN">Telugu</option>
+            <option value="kn-IN">Kannada</option>
+            <option value="ml-IN">Malayalam</option>
+            <option value="mr-IN">Marathi</option>
+            <option value="bn-IN">Bengali</option>
+            <option value="gu-IN">Gujarati</option>
+            <option value="pa-IN">Punjabi</option>
+          </select>
+          <button type="button" class="record-button" id="record-button" aria-label="Start voice recording">●</button>
+          <div class="voice-status" id="voice-status">Tap to start recording</div>
+          <audio id="audio-preview" controls hidden></audio>
+        </div>
+
+        <div class="field">
+          <label for="complaint-photo">Add a photo <span class="optional">Optional</span></label>
+          <p class="field-help">Gemini can describe visible infrastructure evidence such as a pothole, damaged pipe or overflowing drain.</p>
+          <input id="complaint-photo" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
+          <img id="photo-preview" class="photo-preview" alt="Selected complaint evidence" hidden>
+        </div>
+
+        <div class="field">
+          <label for="area-input">Your area, village or city</label>
+          <div class="field-row">
+            <input id="area-input" maxlength="160" placeholder="Type your area name" autocomplete="address-level2">
+            <button type="button" class="button secondary" id="find-area">Find area</button>
+          </div>
+          <div class="location-actions">
+            <button type="button" class="button secondary" id="use-location">Use current location</button>
+          </div>
+          <div class="location-result" id="location-result" role="status"></div>
+        </div>
+
+        <label class="consent">
+          <input type="checkbox" id="consent">
+          <span>I agree to share this complaint and approximate location for public-infrastructure planning. Exact contact details are not requested.</span>
+        </label>
+
+        <button class="button submit" id="submit-button" type="submit">Submit complaint</button>
+        <div class="notice" id="form-notice" role="alert"></div>
+      </form>
+
+      <aside class="card side-card">
+        <h2>What happens next?</h2>
+        <ol>
+          <li>Google speech, translation and Gemini understand your report.</li>
+          <li>Similar reports are combined into a community priority.</li>
+          <li>Officials can review, forward and update its progress.</li>
+        </ol>
+        <p>Already submitted something?</p>
+        <a href="/citizen/track.html">Track your complaint →</a>
+      </aside>
+    </main>
+  </div>
+  <script src="/citizen/file.js"></script>
+</body>
+</html>

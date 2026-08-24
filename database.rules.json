@@ -1,0 +1,24 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "dashboard": {
+      "last_update": {
+        ".read": "auth != null && auth.token.policymaker == true"
+      }
+    },
+    "complaints": {
+      ".read": false,
+      ".write": false
+    },
+    "public_status": {
+      ".read": false,
+      ".write": false
+    },
+    "escalations": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}
+

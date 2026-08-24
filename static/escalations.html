@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escalation Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1B2A3A;
+    --paper: #EAE7DD;
+    --paper-raised: #F2F0E7;
+    --brass: #A8763E;
+    --teal: #3E6B63;
+    --brick: #A13D2B;
+    --slate: #5B6B6F;
+    --line: rgba(27, 42, 58, 0.14);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    padding: 28px 32px 22px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  header h1 {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600;
+    font-size: 22px;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--slate);
+  }
+  a.back-link {
+    color: var(--teal);
+    text-decoration: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+  }
+  a.back-link:hover { text-decoration: underline; }
+
+  main {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 24px 32px 60px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  thead th {
+    text-align: left;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--slate);
+    padding: 0 12px 12px;
+    border-bottom: 1px solid var(--ink);
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--line);
+  }
+  tbody td {
+    padding: 14px 12px;
+    vertical-align: top;
+    font-size: 13px;
+  }
+  td.region {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600;
+    font-size: 15px;
+  }
+  td.category { text-transform: capitalize; color: var(--slate); }
+  td.note { color: var(--slate); max-width: 220px; }
+  td.date { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--slate); white-space: nowrap; }
+
+  .status-pill {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid;
+  }
+  .status-forwarded { color: var(--brass); border-color: var(--brass); background: rgba(168,118,62,0.08); }
+  .status-acknowledged { color: var(--teal); border-color: var(--teal); background: rgba(62,107,99,0.08); }
+  .status-resolved { color: #2F5233; border-color: #2F5233; background: rgba(47,82,51,0.08); }
+
+  .status-actions { margin-top: 8px; display: flex; gap: 6px; }
+  .status-actions button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 4px 8px;
+    border: 1px solid var(--line);
+    background: var(--paper-raised);
+    color: var(--ink);
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .status-actions button:hover { border-color: var(--ink); }
+  .status-actions button:disabled { opacity: 0.35; cursor: default; }
+
+  .empty-state {
+    padding: 60px 24px;
+    text-align: center;
+    color: var(--slate);
+  }
+  .empty-state h2 {
+    font-family: 'Source Serif 4', serif;
+    color: var(--ink);
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="eyebrow"><a href="/dashboard/" class="back-link">&larr; Priority Register</a></div>
+    <h1>Escalation Log</h1>
+  </div>
+  <div class="eyebrow" id="last-updated">&mdash;</div>
+</header>
+
+<main>
+  <table id="log-table" style="display:none;">
+    <thead>
+      <tr>
+        <th>Region</th>
+        <th>Category</th>
+        <th>Forwarded to</th>
+        <th>Note</th>
+        <th>Status</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody id="log-body"></tbody>
+  </table>
+  <div id="empty-container"></div>
+</main>
+
+<script type="module">
+  import {
+    apiFetch,
+    listenForDashboardUpdates,
+    requirePolicymaker,
+  } from '/dashboard/cloud-client.js';
+
+  const STATUS_STEPS = ['forwarded', 'acknowledged', 'resolved'];
+  const STATUS_LABELS = { forwarded: 'Forwarded', acknowledged: 'Acknowledged', resolved: 'Resolved' };
+
+  function escapeHtml(value) {
+    const node = document.createElement('span');
+    node.textContent = String(value ?? '');
+    return node.innerHTML;
+  }
+
+  function nextStatus(current) {
+    const idx = STATUS_STEPS.indexOf(current);
+    return idx >= 0 && idx < STATUS_STEPS.length - 1 ? STATUS_STEPS[idx + 1] : null;
+  }
+
+  async function updateStatus(id, status) {
+    await apiFetch(`/escalations/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ status }),
+    });
+    loadLog();
+  }
+
+  function renderRow(item) {
+    const tr = document.createElement('tr');
+    const next = nextStatus(item.status);
+
+    tr.innerHTML = `
+      <td class="region">${escapeHtml(item.region)}</td>
+      <td class="category">${escapeHtml(item.category)}</td>
+      <td>${escapeHtml(item.forwarded_to)}</td>
+      <td class="note">${item.note ? escapeHtml(item.note) : '&mdash;'}</td>
+      <td>
+        <span class="status-pill status-${escapeHtml(item.status)}">${escapeHtml(STATUS_LABELS[item.status] || item.status)}</span>
+        <div class="status-actions"></div>
+      </td>
+      <td class="date">${new Date(item.created_at).toLocaleDateString()}</td>
+    `;
+
+    const actions = tr.querySelector('.status-actions');
+    if (next) {
+      const btn = document.createElement('button');
+      btn.textContent = 'Mark ' + STATUS_LABELS[next];
+      btn.addEventListener('click', () => updateStatus(item.id, next));
+      actions.appendChild(btn);
+    }
+
+    return tr;
+  }
+
+  async function loadLog() {
+    try {
+      const res = await apiFetch('/escalations');
+      if (res.status === 401) {
+        window.location.href = '/dashboard/login.html';
+        return;
+      }
+      const data = await res.json();
+
+      document.getElementById('last-updated').textContent =
+        'Live \u2014 updated ' + new Date().toLocaleTimeString();
+
+      const table = document.getElementById('log-table');
+      const emptyContainer = document.getElementById('empty-container');
+      const body = document.getElementById('log-body');
+
+      if (!data.length) {
+        table.style.display = 'none';
+        emptyContainer.innerHTML = `
+          <div class="empty-state">
+            <h2>Nothing forwarded yet</h2>
+            <p>Escalations you forward from the priority register will show up here.</p>
+          </div>`;
+        return;
+      }
+
+      table.style.display = '';
+      emptyContainer.innerHTML = '';
+      body.innerHTML = '';
+      data.forEach(item => body.appendChild(renderRow(item)));
+    } catch (err) {
+      document.getElementById('empty-container').innerHTML = `
+        <div class="empty-state">
+          <h2>Could not reach the backend</h2>
+          <p>Make sure the FastAPI server is running at this same address.</p>
+        </div>`;
+    }
+  }
+
+  async function bootstrap() {
+    if (!await requirePolicymaker()) {
+      window.location.href = '/dashboard/login.html';
+      return;
+    }
+    await loadLog();
+    const unsubscribe = await listenForDashboardUpdates(loadLog);
+    if (!unsubscribe) setInterval(loadLog, 10000);
+  }
+
+  bootstrap();
+</script>
+
+</body>
+</html>

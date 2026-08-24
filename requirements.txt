@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+sarvamai
+python-multipart
+pydantic
+python-telegram-bot
+requests
+python-dotenv
+google-genai
+google-cloud-speech
+google-cloud-translate
+google-cloud-bigquery
+firebase-admin

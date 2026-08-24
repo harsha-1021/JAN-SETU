@@ -1,0 +1,22 @@
+.DS_Store
+
+# Local secrets and credentials
+.env
+.env.*
+!.env.example
+*firebase-adminsdk*.json
+service-account*.json
+firebase-service-account*.json
+
+# Python environments and generated files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local application data
+*.db
+*.sqlite
+*.sqlite3
+
