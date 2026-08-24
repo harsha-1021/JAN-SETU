@@ -1,4 +1,4 @@
-# Citizen Demand AI
+# JAN SETU
 
 A multilingual Digital Public Good for collecting citizen infrastructure
 requests, identifying demand hotspots, and helping policymakers prioritize
